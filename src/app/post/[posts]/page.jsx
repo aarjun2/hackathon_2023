@@ -271,8 +271,6 @@ export default function Home() {
         {colorChangeMade && <p>Color chosen successfully!</p>}
         {post && post.commentCount >= 10 && <p>Discussion Ended</p>}
         {post && post.commentCount >= 10 && <p>{post.change_count}</p>}
-        {post && post.commentCount >= 10 && <p>{post.blueSide}</p>}
-        {post && post.commentCount >= 10 && <p>{post.redSide}</p>}
       </div>
     );
   };

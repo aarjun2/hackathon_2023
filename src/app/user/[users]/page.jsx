@@ -6,6 +6,7 @@ import { collection, getDocs, addDoc, query, where,
 deleteDoc, doc, updateDoc} from 'firebase/firestore'; 
 import { db, auth } from '@/app/firebaseConfig';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import { motion } from 'framer-motion';
 
 export default function Home() {
   const [userData, setUserData] = useState([]);
@@ -21,6 +22,7 @@ export default function Home() {
   const [isGlobal, setIsGlobal] = useState(true);
   const [bio, setBio] = useState(''); 
   const [preferredName, setPreferredName] = useState(''); 
+  const [topic, setTopic] = useState('');
 
   const fetchConnectionRequests = async () => {
     try {
@@ -127,6 +129,10 @@ export default function Home() {
       });
 
       await deleteDoc(doc(db, 'connection_requests', requestId));
+      setConnectionsData(prevConnections => [
+        ...prevConnections,
+        { user1Uid: fromUid, user2Uid: user.uid }
+      ]);
 
       fetchConnectionRequests();
     } catch (error) {
@@ -155,7 +161,8 @@ export default function Home() {
           title,
           blueSide,
           redSide,
-          isGlobal
+          isGlobal,
+          topic
         };
   
         await addDoc(collection(db, 'posts'), postData);
@@ -228,101 +235,143 @@ export default function Home() {
 
   return (
     <>
-      <h1>Home page</h1>
-      <h2>
-        <Link href="/authentication">Registration</Link>
+      <h1 className="text-2xl mb-4 text-green-700">Home page</h1>
+      <h2 className="mb-4">
+        <Link href="/authentication" className="text-green-500 hover:underline">Registration</Link>
       </h2>
-      <div>
-        <h3>User Data (excluding current user):</h3>
-        <ul>
-          {userData.map((user) => (
-            <li key={user.id}>
-              {`UID: ${user.UID}`}
-              <button onClick={() => handleConnect(user.UID)}>Connect</button>
-              <textarea
-                placeholder="Enter comments"
-                value={comments[user.UID] || ''}
-                onChange={(e) => handleCommentChange(user.UID, e.target.value)}
-              />
-              </li>
-          ))}
-        </ul>
-      </div>
-      <div>
-        <h3>Connection Requests:</h3>
-        <ul>
-          {connectionRequests.map((request) => (
-            <li key={request.id}>
-              From UID: {request.fromUid}<br />
-              Comments: {request.comments}
-              <button onClick={() => handleAccept(request.id, request.fromUid)}>Accept</button>
-              <button onClick={() => handleReject(request.id)}>Reject</button>
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div>
-      <h3>Connections:</h3>
-      <ul>
-        {connectionsData.map((connection) => (
-          <li key={connection.id}>
-            User1 UID: {connection.user1Uid}<br />
-            User2 UID: {connection.user2Uid}
-          </li>
-        ))}
-      </ul>
-    </div>
-    <div>
-        <textarea
-          placeholder="Bio"
-          value={bio}
-          onChange={handleBioChange}
-        />
-        <button onClick={handleBioSubmit}>Submit Bio</button>
-      </div>
-      <div>
-        <textarea
-          placeholder="Preferred Name"
-          value={preferredName}
-          onChange={handlePreferredNameChange}
-        />
-        <button onClick={handlePreferredNameSubmit}>Submit Preferred Name</button>
-      </div>
-      <h3>Create a Post:</h3>
-      <form onSubmit={handleFormSubmit}>
+
+      <div className="flex gap-8">
+          {/* Left Section: Bio and Preferred Name */}
+          <div className="flex flex-col mr-4 bg-green-100 p-6 rounded-lg">
+            <div className="mt-8">
+              <h3 className="text-xl mb-4">Bio:</h3>
+              <div className="flex">
+                <textarea
+                  placeholder="Bio"
+                  value={bio}
+                  onChange={handleBioChange}
+                  className="w-full border border-green-500 p-2 rounded"
+                />
+                <button onClick={handleBioSubmit} className="ml-2 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-700 transition duration-300">
+                  Submit Bio
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <h3 className="text-xl mb-4">Preferred Name:</h3>
+              <div className="flex">
+                <textarea
+                  placeholder="Preferred Name"
+                  value={preferredName}
+                  onChange={handlePreferredNameChange}
+                  className="w-full border border-green-500 p-2 rounded"
+                />
+                <button onClick={handlePreferredNameSubmit} className="ml-2 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-700 transition duration-300">
+                  Submit Preferred Name
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle Section: Connection Requests */}
+          <div className="flex flex-col mr-4 bg-green-100 p-6 rounded-lg">
+            <div className="mt-8">
+              <h3 className="text-xl mb-4">Connection Requests:</h3>
+              <ul>
+                {connectionRequests.map((request) => (
+                  <li key={request.id} className="mb-2">
+                    From UID: {request.fromUid}<br />
+                    Comments: {request.comments}
+                    <button onClick={() => handleAccept(request.id, request.fromUid)} className="ml-2 py-1 px-2 bg-green-500 text-white rounded hover:bg-green-700 transition duration-300">
+                      Accept
+                    </button>
+                    <button onClick={() => handleReject(request.id)} className="ml-2 py-1 px-2 bg-red-500 text-white rounded hover:bg-red-700 transition duration-300">
+                      Reject
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Right Section: Connections */}
+          <div className="flex flex-col bg-green-100 p-6 rounded-lg">
+            <div className="mt-8">
+              <h3 className="text-xl mb-4">Connections:</h3>
+              <ul>
+                {connectionsData.map((connection) => (
+                  <li key={connection.id} className="mb-2">
+                    User1 UID: {connection.user1Uid}<br />
+                    User2 UID: {connection.user2Uid}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      <div className="mt-8">
+        <h3 className="text-xl mb-4">Create a Post:</h3>
+        <motion.form 
+          onSubmit={handleFormSubmit} 
+          className="grid grid-cols-2 gap-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <div>
-            <label>Title:</label>
+            <label className="block mb-2 text-green-700">Title:</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              className="w-full border border-green-500 p-2 rounded"
             />
           </div>
           <div>
-            <label>Blue Side:</label>
+            <label className="block mb-2 text-green-700">Topic:</label>
+            <input
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              className="w-full border border-green-500 p-2 rounded"
+            />
+          </div>
+          <div>
+            <label className="block mb-2 text-green-700">Blue Side:</label>
             <input
               type="text"
               value={blueSide}
               onChange={(e) => setBlueSide(e.target.value)}
+              className="w-full border border-green-500 p-2 rounded"
             />
           </div>
           <div>
-            <label>Red Side:</label>
+            <label className="block mb-2 text-green-700">Red Side:</label>
             <input
               type="text"
               value={redSide}
               onChange={(e) => setRedSide(e.target.value)}
+              className="w-full border border-green-500 p-2 rounded"
             />
           </div>
           <div>
-            <label>Choose:</label>
-            <select value={isGlobal} onChange={(e) => setIsGlobal(e.target.value === 'true')}>
-              <option value={true}>Global</option>
-              <option value={false}>Private</option>
+            <label className="block mb-2 text-green-700">Choose:</label>
+            <select 
+              value={isGlobal} 
+              onChange={(e) => setIsGlobal(e.target.value === 'true')}
+              className="w-full border border-green-500 p-2 rounded"
+            >
+              <option value={true} className="text-green-700">Global</option>
+              <option value={false} className="text-green-700">Private</option>
             </select>
           </div>
-          <button type="submit">Submit</button>
-        </form>
+          <button type="submit" className="col-span-2 mt-4 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-700 transition duration-300">
+            Submit
+          </button>
+        </motion.form>
+      </div>
     </>
   );
 }

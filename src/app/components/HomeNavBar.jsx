@@ -17,7 +17,7 @@ const Navbar = () => {
         />
       </div>
       <div className="flex items-center space-x-4">
-        <Link href="/" className="text-black">
+        <Link href="/authentication" className="text-black">
           <FiUser size={24} />
         </Link>
       </div>

@@ -104,6 +104,26 @@ export default function Home() {
         return;
       }
 
+    const postDocRef = doc(db, 'posts', params.posts);
+    const postDocSnapshot = await getDoc(postDocRef);
+
+    if (postDocSnapshot.exists()) {
+      const postData = postDocSnapshot.data();
+      const updatedCommentCount = (postData.commentCount || 0) + 1;
+
+      if (updatedCommentCount === 10) {
+        const changeCount = (postData.change_count || 0) + 1;
+        console.log('Change count:', changeCount);
+      }
+
+      const updatedPostData = {
+        ...postData,
+        commentCount: updatedCommentCount,
+      };
+
+      await updateDoc(postDocRef, updatedPostData);
+    }
+
       const commentData = {
         text: commentText,
         parentId: commentId,
@@ -169,6 +189,11 @@ export default function Home() {
   
       if (postDocSnapshot.exists()) {
         const postData = postDocSnapshot.data();
+        const updatedPostData = {
+          ...postData,
+          change_count: (postData.change_count || 0) + 1,
+        };
+        await updateDoc(postDocRef, updatedPostData);
         if (chosenColor !== color) {
           if (chosenColor) {
             console.log('Changing vote from', chosenColor, 'to', color);
@@ -205,6 +230,7 @@ export default function Home() {
   };
 
   const renderColorButtons = (postId) => {
+    const post = posts.find(post => post.id === postId);
     return (
       <div>
         <button onClick={() => handleColorButtonClick(postId, 'blue')}>
@@ -214,6 +240,10 @@ export default function Home() {
           Red
         </button>
         {colorChangeMade && <p>Color chosen successfully!</p>}
+        {post && post.commentCount >= 10 && <p>Discussion Ended</p>}
+        {post && post.commentCount >= 10 && <p>{post.change_count}</p>}
+        {post && post.commentCount >= 10 && <p>{post.blueSide}</p>}
+        {post && post.commentCount >= 10 && <p>{post.redSide}</p>}
       </div>
     );
   };

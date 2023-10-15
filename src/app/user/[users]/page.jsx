@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { collection, getDocs, addDoc, query, where,
-deleteDoc, doc } from 'firebase/firestore'; 
+deleteDoc, doc, updateDoc} from 'firebase/firestore'; 
 import { db, auth } from '@/app/firebaseConfig';
 import { useAuthState } from 'react-firebase-hooks/auth';
 
@@ -19,6 +19,8 @@ export default function Home() {
   const [comments, setComments] = useState({});
   const [connectionsData, setConnectionsData] = useState([]);
   const [isGlobal, setIsGlobal] = useState(true);
+  const [bio, setBio] = useState(''); 
+  const [preferredName, setPreferredName] = useState(''); 
 
   const fetchConnectionRequests = async () => {
     try {
@@ -168,6 +170,46 @@ export default function Home() {
     }
   };
 
+  const handleBioChange = (event) => {
+    setBio(event.target.value);
+  };
+
+  const handlePreferredNameChange = (event) => {
+    setPreferredName(event.target.value);
+  };
+
+  
+  const updateUserData = async (uid, newData) => {
+    try {
+      const userQuery = query(collection(db, 'users'), where('UID', '==', uid));
+      const querySnapshot = await getDocs(userQuery);
+  
+      if (querySnapshot.empty) {
+        console.error('No user found with the provided UID:', uid);
+        return;
+      }
+  
+      const userDocRef = doc(db, 'users', querySnapshot.docs[0].id);
+      await updateDoc(userDocRef, newData);
+  
+      console.log('User data updated successfully:', newData);
+    } catch (error) {
+      console.error('Error updating user data:', error);
+    }
+  };
+
+  const handleBioSubmit = async () => {
+    if (user) {
+      await updateUserData(user.uid, { bio });
+    }
+  };
+
+  const handlePreferredNameSubmit = async () => {
+    if (user) {
+      await updateUserData(user.uid, { preferredName });
+    }
+  };
+
   if (loading || userLoading) {
     return (
       <div>
@@ -230,6 +272,22 @@ export default function Home() {
         ))}
       </ul>
     </div>
+    <div>
+        <textarea
+          placeholder="Bio"
+          value={bio}
+          onChange={handleBioChange}
+        />
+        <button onClick={handleBioSubmit}>Submit Bio</button>
+      </div>
+      <div>
+        <textarea
+          placeholder="Preferred Name"
+          value={preferredName}
+          onChange={handlePreferredNameChange}
+        />
+        <button onClick={handlePreferredNameSubmit}>Submit Preferred Name</button>
+      </div>
       <h3>Create a Post:</h3>
       <form onSubmit={handleFormSubmit}>
           <div>

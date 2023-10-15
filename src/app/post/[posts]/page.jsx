@@ -157,22 +157,37 @@ export default function Home() {
     }
   
     return (
-      <ul>
+      <ul className="pl-4 border-l border-gray-300">
         {nestedComments.map(comment => (
-          <li key={comment.id} style={{ marginLeft: `${depth * 20}px` }}>
-            {comment.text}
-            <button onClick={() => handleReply(comment.id)}>Reply</button>
-            <button onClick={() => handleLike(comment.id, comment.userId)} disabled={user && comment.userId === user.uid}>
+          <li key={comment.id} className="mb-2">
+            <div className="flex items-center">
+              <div className="w-4 h-4 bg-gray-400 rounded-full mr-2"></div>
+              <div className="text-gray-700">{comment.text}</div>
+            </div>
+            <button onClick={() => handleReply(comment.id)} className="text-sm ml-6">
+              Reply
+            </button>
+            <button
+              onClick={() => handleLike(comment.id, comment.userId)}
+              disabled={user && comment.userId === user.uid}
+              className="text-sm ml-2"
+            >
               Like
             </button>
             {replyPostId === comment.id && (
-              <div>
+              <div className="ml-6">
                 <textarea
                   placeholder="Enter your reply"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
+                  className="w-full p-2 border rounded mb-2"
                 />
-                <button onClick={() => handleReplySubmit(comment.id)}>Submit Reply</button>
+                <button
+                  onClick={() => handleReplySubmit(comment.id)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                >
+                  Submit Reply
+                </button>
               </div>
             )}
             {renderNestedComments(comments, comment.id, depth + 1)}
@@ -309,7 +324,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
       <div className="flex flex-grow">
         <div className="w-1/5 p-4 border-r border-gray-300 flex flex-col">
           

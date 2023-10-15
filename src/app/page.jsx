@@ -2,17 +2,20 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { collection, getDocs, query, where } from 'firebase/firestore'; 
+import { collection, getDocs, query, where, addDoc } from 'firebase/firestore'; 
 import { db, auth } from './firebaseConfig';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import Navbar from './components/HomeNavBar';
+import { motion } from 'framer-motion';
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [connectionsData, setConnectionsData] = useState([]);
+  const [userData, setUserData] = useState([]);
   const [user] = useAuthState(auth);
+  const [userComments, setUserComments] = useState({});
 
   const fetchPosts = async (isPrivate) => {
     try {
@@ -65,6 +68,34 @@ export default function Home() {
     }
   };
 
+  const handleConnect = async (targetUid) => {
+    try {
+      const commentsForTarget = userComments[targetUid] || ''; 
+      const connectionRequest = {
+        fromUid: user.uid,
+        toUid: targetUid,
+        comments: commentsForTarget, 
+      };
+
+      await addDoc(collection(db, 'connection_requests'), connectionRequest);
+      console.log('Connection request sent successfully!');
+    } catch (error) {
+      console.error('Error sending connection request:', error);
+      setError('Error sending connection request.');
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const usersQuery = query(collection(db, 'users'));
+      const querySnapshot = await getDocs(usersQuery);
+      const usersData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setUserData(usersData);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
   const handlePrivateButtonClick = () => {
     fetchPosts(true); 
   };
@@ -73,13 +104,35 @@ export default function Home() {
     fetchPosts(false); 
   };
 
-  useEffect(() => {
-    fetchPosts(false); 
-  }, []);
+  const handleCommentChange = (userId, comment) => {
+    setUserComments((prevComments) => ({
+      ...prevComments,
+      [userId]: comment,
+    }));
+  };
 
   useEffect(() => {
-    fetchConnections(); 
+    fetchPosts(false);
+    if (user) {
+      fetchConnections();
+    }
+    fetchUsers();
   }, [user]);
+
+  const filterUsers = (users, currentUser, connections) => {
+    const currentUserUid = currentUser?.uid;
+    const connectedUserIds = connections.map(connection => (
+      connection.user1Uid === currentUserUid ? connection.user2Uid : connection.user1Uid
+    ));
+
+    return users.filter(user => user.UID !== currentUserUid && !connectedUserIds.includes(user.UID));
+  };
+
+  const filteredUsers = filterUsers(userData, user, connectionsData);
+
+  const getUserDisplayName = (user) => {
+    return user.displayName ? user.displayName : 'Anonymous';
+  };
 
   if (loading) {
     return (
@@ -104,29 +157,75 @@ export default function Home() {
         <div className="w-1/5 p-4 border-r border-gray-300 flex flex-col">
         </div>
         <div className="w-1/3 p-4">
-          <h1>Home page</h1>
-          <button onClick={handlePrivateButtonClick}>Private</button>
-          <button onClick={handleGlobal}>Global</button>
-          <h2>
-            <Link href="/authentication">Registration</Link>
-          </h2>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="bg-blue-500 hover:bg-blue-700 
+            text-white font-bold py-2 px-4 
+            rounded-full mr-4"
+            onClick={handlePrivateButtonClick}
+          >
+            Private
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="bg-green-500 hover:bg-green-700 
+            text-white font-semibold py-2 px-4 rounded-full"
+            onClick={handleGlobal}
+          >
+            Global
+          </motion.button>
           <div>
-            <h3>All Posts:</h3>
+            <h3 className="mt-4">All Posts:</h3>
             <ul>
               {posts.map((post) => (
-                <li key={post.id} className="rounded p-4 border-b border-gray-300 hover:bg-gray-100">
+                <motion.li
+                  key={post.id}
+                  className="rounded p-4 border-b border-gray-300 hover:bg-gray-100"
+                  whileHover={{ scale: 1.05 }}
+                >
                   <strong>Title:</strong> {post.title} <br />
                   <strong>Text:</strong> {post.text} <br />
                   <Link href={`/post/${post.id}`}>
                     <p> View Post </p>
                   </Link>
-                </li>
+                </motion.li>
               ))}
             </ul>
           </div>
         </div>
         <div className="w-1/3 p-4">
-          <h1>Column 2</h1>
+        {user && (
+            <>
+              <h1 className="mb-4">Users:</h1>
+              <ul>
+                {filteredUsers.map((user) => (
+                  <motion.li
+                    key={user.id}
+                    whileHover={{ scale: 1.05 }}
+                    className="mb-4"
+                  >
+                    {`Name: ${getUserDisplayName(user)}`}
+                    <textarea
+                      placeholder="Enter comments"
+                      value={userComments[user.UID] || ''}
+                      onChange={(e) => handleCommentChange(user.UID, e.target.value)}
+                      className="block w-full p-2 mt-2"
+                    />
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleConnect(user.UID)}
+                      className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+                    >
+                      Connect
+                    </motion.button>
+                  </motion.li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
       </div>
     </div>

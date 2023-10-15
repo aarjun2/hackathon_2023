@@ -16,6 +16,7 @@ export default function Home() {
   const [userData, setUserData] = useState([]);
   const [user] = useAuthState(auth);
   const [userComments, setUserComments] = useState({});
+  const [pendingRequests, setPendingRequests] = useState([]);
 
   const fetchPosts = async (isPrivate) => {
     try {
@@ -42,6 +43,27 @@ export default function Home() {
       console.error('Error fetching posts:', error);
     }
   };
+
+  const fetchPendingRequests = async () => {
+    try {
+      if (!user) return;
+
+      const q = query(
+        collection(db, 'connection_requests'),
+        where('fromUid', '==', user.uid)
+      );
+
+      const querySnapshot = await getDocs(q);
+      const requestsData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setPendingRequests(requestsData);
+    } catch (error) {
+      console.error('Error fetching connection requests:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingRequests();
+  }, [user]);
 
   const fetchConnections = async () => {
     try {
@@ -79,6 +101,7 @@ export default function Home() {
 
       await addDoc(collection(db, 'connection_requests'), connectionRequest);
       console.log('Connection request sent successfully!');
+      fetchPendingRequests();
     } catch (error) {
       console.error('Error sending connection request:', error);
       setError('Error sending connection request.');
@@ -130,8 +153,12 @@ export default function Home() {
 
   const filteredUsers = filterUsers(userData, user, connectionsData);
 
+  const isRequestPending = (userId) => {
+    return pendingRequests.some(request => request.toUid === userId);
+  };
+
   const getUserDisplayName = (user) => {
-    return user.displayName ? user.displayName : 'Anonymous';
+    return user.preferredName ? user.preferredName : 'Anonymous';
   };
 
   if (loading) {
@@ -154,9 +181,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <div className="flex flex-grow">
-        <div className="w-1/5 p-4 border-r border-gray-300 flex flex-col">
-        </div>
-        <div className="w-1/3 p-4">
+        <div className="w-1/2 p-4">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -186,7 +211,8 @@ export default function Home() {
                   whileHover={{ scale: 1.05 }}
                 >
                   <strong>Title:</strong> {post.title} <br />
-                  <strong>Text:</strong> {post.text} <br />
+                  <strong> {post.blueSide} vs {post.redSide} </strong> <br />
+                  <strong> #{post.topic} </strong>
                   <Link href={`/post/${post.id}`}>
                     <p> View Post </p>
                   </Link>
@@ -195,7 +221,7 @@ export default function Home() {
             </ul>
           </div>
         </div>
-        <div className="w-1/3 p-4">
+        <div className="w-1/2 p-4">
         {user && (
             <>
               <h1 className="mb-4">Users:</h1>
@@ -207,20 +233,26 @@ export default function Home() {
                     className="mb-4"
                   >
                     {`Name: ${getUserDisplayName(user)}`}
-                    <textarea
-                      placeholder="Enter comments"
-                      value={userComments[user.UID] || ''}
-                      onChange={(e) => handleCommentChange(user.UID, e.target.value)}
-                      className="block w-full p-2 mt-2"
-                    />
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleConnect(user.UID)}
-                      className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
-                    >
-                      Connect
-                    </motion.button>
+                    {isRequestPending(user.UID) ? (
+                      <p>Pending Request</p>
+                    ) : (
+                      <>
+                        <textarea
+                        placeholder="Enter comments"
+                        value={userComments[user.UID] || ''}
+                        onChange={(e) => handleCommentChange(user.UID, e.target.value)}
+                        className="block w-full p-2 mt-2"
+                      />
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleConnect(user.UID)}
+                          className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+                        >
+                          Connect
+                        </motion.button>
+                      </>
+                    )}
                   </motion.li>
                 ))}
               </ul>

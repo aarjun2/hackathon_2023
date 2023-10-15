@@ -9,6 +9,8 @@ import { deleteDoc, doc, addDoc, where,
 getDoc, setDoc, updateDoc, query} from 'firebase/firestore';
 import Navbar from '@/app/components/HomeNavBar';
 import { useParams } from 'next/navigation';
+import { AiFillLike } from 'react-icons/ai';
+import { motion } from 'framer-motion'; 
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -244,16 +246,28 @@ export default function Home() {
     }
   };
 
+  const ButtonWithAnimation = ({ onClick, color, children }) => {
+    return (
+      <motion.button
+        whileTap={{ scale: 0.95 }}
+        onClick={onClick}
+        className={`rounded-full px-6 py-3 ${color === 'blue' ? 'bg-blue-500' : 'bg-red-500'} text-white mr-4`}
+      >
+        {children}
+      </motion.button>
+    );
+  };
+
   const renderColorButtons = (postId) => {
     const post = posts.find(post => post.id === postId);
     return (
       <div>
-        <button onClick={() => handleColorButtonClick(postId, 'blue')}>
-          Blue
-        </button>
-        <button onClick={() => handleColorButtonClick(postId, 'red')}>
-          Red
-        </button>
+         <ButtonWithAnimation onClick={() => handleColorButtonClick(postId, 'blue')} color="blue">
+            Blue
+          </ButtonWithAnimation>
+          <ButtonWithAnimation onClick={() => handleColorButtonClick(postId, 'red')} color="red">
+            Red
+          </ButtonWithAnimation>
         {colorChangeMade && <p>Color chosen successfully!</p>}
         {post && post.commentCount >= 10 && <p>Discussion Ended</p>}
         {post && post.commentCount >= 10 && <p>{post.change_count}</p>}
@@ -325,82 +339,85 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <div className="flex flex-grow">
-        <div className="w-1/5 p-4 border-r border-gray-300 flex flex-col">
-          
-        </div>
-        <div className="w-1/3 p-4">
-          <h1>Home page</h1>
-          <button onClick={handlePrivateButtonClick}>Private</button>
-          <button onClick={handleTogglePosts}>Posts</button>
-          <h2>
-            <Link href="/authentication">Registration</Link>
-          </h2>
+        <div className="flex-grow p-4">
           <div>
-            <h3>All Posts:</h3>
             <ul>
-                {posts.map((post) => {
-                    if (post.id === params.posts) {
-                    return (
-                        <li key={post.id} className="rounded p-4 border-b border-gray-300 hover:bg-gray-100">
-                        <strong>Title:</strong> {post.title} <br />
-                        <strong>Text:</strong> {post.text} <br />
-                        {renderColorButtons(post.id)}
-                        <button onClick={() => handleReply(post.id)}>Reply</button>
-                        {user && post.UID === user.uid && (
-                            <button onClick={() => handleDelete(post.id)}>Delete</button>
-                        )}
-                        {replyPostId === post.id && (
-                            <div>
-                            <textarea
-                                placeholder="Enter your reply"
-                                value={commentText}
-                                onChange={(e) => setCommentText(e.target.value)}
-                            />
-                            <button onClick={() => handleReplySubmit(post.id)}>Submit</button>
-                            </div>
-                        )}
-                        <ul>
-                            {postComments[post.id]?.map((comment) => {
-                            if (comment.parentId === post.id) {
-                                return (
-                                <li key={comment.id}>
-                                    {comment.text}
-                                    <button onClick={() => handleReply(comment.id)}>Reply</button>
+              {posts.map((post) => {
+                if (post.id === params.posts) {
+                  return (
+                    <li key={post.id} className="rounded p-4 border-b border-gray-300 hover:bg-gray-100">
+                      <strong>Title:</strong> {post.title} <br />
+                      <strong>{post.blueSide} vs {post.redSide}</strong> <br />
+                      {renderColorButtons(post.id)}
+                      <button onClick={() => handleReply(post.id)} className="rounded bg-blue-500 text-white p-2">
+                        Reply
+                      </button>
+                      {user && post.UID === user.uid && (
+                        <button onClick={() => handleDelete(post.id)} className="rounded bg-red-500 text-white p-2">
+                          Delete
+                        </button>
+                      )}
+                      {replyPostId === post.id && (
+                        <div>
+                          <textarea
+                            placeholder="Enter your reply"
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            className="w-full p-2 border rounded mb-2"
+                          />
+                          <button onClick={() => handleReplySubmit(post.id)} className="bg-blue-500 text-white p-2 rounded">
+                            Submit
+                          </button>
+                        </div>
+                      )}
+                      <ul>
+                        {postComments[post.id]?.map((comment) => {
+                          if (comment.parentId === post.id) {
+                            return (
+                              <li key={comment.id}>
+                                {comment.text}
+                                <button onClick={() => handleReply(comment.id)} className="rounded bg-blue-500 text-white p-2">
+                                  Reply
+                                </button>
+                                <button
+                                  onClick={() => handleLike(comment.id, comment.userId)}
+                                  disabled={user && comment.userId === user.uid}
+                                  className="rounded bg-green-500 text-white p-2"
+                                >
+                                  <AiFillLike /> Like
+                                </button>
+                                {replyPostId === comment.id && (
+                                  <div>
+                                    <textarea
+                                      placeholder="Enter your reply"
+                                      value={commentText}
+                                      onChange={(e) => setCommentText(e.target.value)}
+                                      className="w-full p-2 border rounded mb-2"
+                                    />
                                     <button
-                                    onClick={() => handleLike(comment.id, comment.userId)}
-                                    disabled={user && comment.userId === user.uid}
+                                      onClick={() => handleReplySubmit(comment.id)}
+                                      className="bg-blue-500 text-white p-2 rounded"
                                     >
-                                    Like
+                                      Submit Reply
                                     </button>
-                                    {replyPostId === comment.id && (
-                                    <div>
-                                        <textarea
-                                        placeholder="Enter your reply"
-                                        value={commentText}
-                                        onChange={(e) => setCommentText(e.target.value)}
-                                        />
-                                        <button onClick={() => handleReplySubmit(comment.id)}>Submit Reply</button>
-                                    </div>
-                                    )}
-                                    {renderNestedComments(postComments[post.id], comment.id, 1)}
-                                </li>
-                                );
-                            } else {
-                                return null;
-                            }
-                            })}
-                        </ul>
-                        </li>
-                    );
-                    } else {
-                    return null;
-                    }
-                })}
+                                  </div>
+                                )}
+                                {renderNestedComments(postComments[post.id], comment.id, 1)}
+                              </li>
+                            );
+                          } else {
+                            return null;
+                          }
+                        })}
+                      </ul>
+                    </li>
+                  );
+                } else {
+                  return null;
+                }
+              })}
             </ul>
           </div>
-        </div>
-        <div className="w-1/3 p-4">
-          <h1>Column 2</h1>
         </div>
       </div>
     </div>

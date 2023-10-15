@@ -7,6 +7,7 @@ deleteDoc, doc, updateDoc} from 'firebase/firestore';
 import { db, auth } from '@/app/firebaseConfig';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { motion } from 'framer-motion';
+import { FiHome } from 'react-icons/fi';
 
 export default function Home() {
   const [userData, setUserData] = useState([]);
@@ -23,6 +24,7 @@ export default function Home() {
   const [bio, setBio] = useState(''); 
   const [preferredName, setPreferredName] = useState(''); 
   const [topic, setTopic] = useState('');
+  const [postAdded, setPostAdded] = useState(false); 
 
   const fetchConnectionRequests = async () => {
     try {
@@ -166,7 +168,8 @@ export default function Home() {
         };
   
         await addDoc(collection(db, 'posts'), postData);
-        console.log('Post added successfully!');//NEED TO REMOVE
+        console.log('Post added successfully!');
+        setPostAdded(true);
       } else {
         console.error('Please fill in all fields.');
         setError('Please fill in all fields.');
@@ -219,159 +222,144 @@ export default function Home() {
 
   if (loading || userLoading) {
     return (
-      <div>
-        <p>Initialising User...</p>
+      <div className="flex justify-center items-center min-h-screen">
+        <p>Initializing User...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div>
+      <div className="flex justify-center items-center min-h-screen">
         <p>Error: {error.message}</p>
       </div>
     );
   }
 
   return (
-    <>
-      <h1 className="text-2xl mb-4 text-green-700">Home page</h1>
-      <h2 className="mb-4">
-        <Link href="/authentication" className="text-green-500 hover:underline">Registration</Link>
-      </h2>
+    <div className="container mx-auto p-8">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+      <h1 className="text-4xl mb-8 text-green-700">
+          <span>Profile Page</span>
+          <Link href="/">
+              <FiHome size={24} />
+          </Link>
+        </h1>
+      <div className="grid lg:grid-cols-3 gap-8 mb-12">
+        {/* Bio and Preferred Name Section */}
+        <motion.div className="bg-green-100 p-6 rounded-lg shadow-lg" whileHover={{ scale: 1.05 }} transition={{ duration: 0.3 }}>
+          <h3 className="text-2xl mb-4">Bio</h3>
+          <textarea 
+            className="w-full h-32 border border-green-500 p-2 rounded mb-4" 
+            value={bio} 
+            onChange={handleBioChange} 
+            placeholder="Enter your bio..."
+          />
+          <button onClick={handleBioSubmit} className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-700 transition duration-300">
+            Submit Bio
+          </button>
 
-      <div className="flex gap-8">
-          {/* Left Section: Bio and Preferred Name */}
-          <div className="flex flex-col mr-4 bg-green-100 p-6 rounded-lg">
-            <div className="mt-8">
-              <h3 className="text-xl mb-4">Bio:</h3>
-              <div className="flex">
-                <textarea
-                  placeholder="Bio"
-                  value={bio}
-                  onChange={handleBioChange}
-                  className="w-full border border-green-500 p-2 rounded"
-                />
-                <button onClick={handleBioSubmit} className="ml-2 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-700 transition duration-300">
-                  Submit Bio
-                </button>
+          <h3 className="text-2xl mt-8 mb-4">Preferred Name</h3>
+          <input 
+            className="w-full border border-green-500 p-2 rounded mb-4"
+            type="text"
+            value={preferredName}
+            onChange={handlePreferredNameChange}
+            placeholder="Enter your preferred name"
+          />
+          <button onClick={handlePreferredNameSubmit} className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-700 transition duration-300">
+            Submit Preferred Name
+          </button>
+        </motion.div>
+          {/* Connection Requests Section */}
+          <motion.div className="bg-green-100 p-6 rounded-lg shadow-lg" whileHover={{ scale: 1.05 }} transition={{ duration: 0.3 }}>
+            <h3 className="text-2xl mb-4">Connection Requests</h3>
+            {/* Connection request elements come here */}
+            {connectionRequests.map((request, index) => (
+              <div key={index} className="mb-4">
+                <p className="mb-2">From: {request.fromUid}</p>
+                <p className="mb-2">Comment: {request.comments}</p>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => handleAccept(request.id, request.fromUid)} 
+                    className="bg-green-500 text-white py-1 px-4 rounded hover:bg-green-700 transition duration-300"
+                  >
+                    Accept
+                  </button>
+                  <button 
+                    onClick={() => handleReject(request.id)} 
+                    className="bg-red-500 text-white py-1 px-4 rounded hover:bg-red-700 transition duration-300"
+                  >
+                    Reject
+                  </button>
+                </div>
               </div>
-            </div>
+            ))}
+          </motion.div>
 
-            <div className="mt-8">
-              <h3 className="text-xl mb-4">Preferred Name:</h3>
-              <div className="flex">
-                <textarea
-                  placeholder="Preferred Name"
-                  value={preferredName}
-                  onChange={handlePreferredNameChange}
-                  className="w-full border border-green-500 p-2 rounded"
-                />
-                <button onClick={handlePreferredNameSubmit} className="ml-2 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-700 transition duration-300">
-                  Submit Preferred Name
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Middle Section: Connection Requests */}
-          <div className="flex flex-col mr-4 bg-green-100 p-6 rounded-lg">
-            <div className="mt-8">
-              <h3 className="text-xl mb-4">Connection Requests:</h3>
-              <ul>
-                {connectionRequests.map((request) => (
-                  <li key={request.id} className="mb-2">
-                    From UID: {request.fromUid}<br />
-                    Comments: {request.comments}
-                    <button onClick={() => handleAccept(request.id, request.fromUid)} className="ml-2 py-1 px-2 bg-green-500 text-white rounded hover:bg-green-700 transition duration-300">
-                      Accept
-                    </button>
-                    <button onClick={() => handleReject(request.id)} className="ml-2 py-1 px-2 bg-red-500 text-white rounded hover:bg-red-700 transition duration-300">
-                      Reject
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Right Section: Connections */}
-          <div className="flex flex-col bg-green-100 p-6 rounded-lg">
-            <div className="mt-8">
-              <h3 className="text-xl mb-4">Connections:</h3>
-              <ul>
-                {connectionsData.map((connection) => (
-                  <li key={connection.id} className="mb-2">
-                    User1 UID: {connection.user1Uid}<br />
-                    User2 UID: {connection.user2Uid}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          {/* Connections Section */}
+          <motion.div className="bg-green-100 p-6 rounded-lg shadow-lg" whileHover={{ scale: 1.05 }} transition={{ duration: 0.3 }}>
+            <h3 className="text-2xl mb-4">Connections</h3>
+            {/* Connection elements come here */}
+            {connectionsData.map((connection, index) => (
+              <p key={index} className="mb-2">
+                {connection.user1Uid} <span className="mx-1">-</span> {connection.user2Uid}
+              </p>
+            ))}
+          </motion.div>
         </div>
 
-      <div className="mt-8">
-        <h3 className="text-xl mb-4">Create a Post:</h3>
-        <motion.form 
-          onSubmit={handleFormSubmit} 
-          className="grid grid-cols-2 gap-4"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div>
-            <label className="block mb-2 text-green-700">Title:</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-green-500 p-2 rounded"
-            />
-          </div>
-          <div>
-            <label className="block mb-2 text-green-700">Topic:</label>
-            <input
-              type="text"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              className="w-full border border-green-500 p-2 rounded"
-            />
-          </div>
-          <div>
-            <label className="block mb-2 text-green-700">Blue Side:</label>
-            <input
-              type="text"
-              value={blueSide}
-              onChange={(e) => setBlueSide(e.target.value)}
-              className="w-full border border-green-500 p-2 rounded"
-            />
-          </div>
-          <div>
-            <label className="block mb-2 text-green-700">Red Side:</label>
-            <input
-              type="text"
-              value={redSide}
-              onChange={(e) => setRedSide(e.target.value)}
-              className="w-full border border-green-500 p-2 rounded"
-            />
-          </div>
-          <div>
-            <label className="block mb-2 text-green-700">Choose:</label>
-            <select 
-              value={isGlobal} 
-              onChange={(e) => setIsGlobal(e.target.value === 'true')}
-              className="w-full border border-green-500 p-2 rounded"
-            >
-              <option value={true} className="text-green-700">Global</option>
-              <option value={false} className="text-green-700">Private</option>
-            </select>
-          </div>
-          <button type="submit" className="col-span-2 mt-4 py-2 px-4 bg-green-500 text-white rounded hover:bg-green-700 transition duration-300">
+      {/* Create Post Section */}
+      <motion.div className="bg-green-100 p-6 rounded-lg shadow-lg lg:col-span-3" whileHover={{ scale: 1.05 }} transition={{ duration: 0.3 }}>
+        <h3 className="text-2xl mb-6">Create a Post</h3>
+        <form onSubmit={handleFormSubmit} className="space-y-4">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Title"
+            className="w-full border border-green-500 p-2 rounded"
+          />
+          <input
+            type="text"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="Topic"
+            className="w-full border border-green-500 p-2 rounded"
+          />
+          <input
+            type="text"
+            value={blueSide}
+            onChange={(e) => setBlueSide(e.target.value)}
+            placeholder="Blue Side"
+            className="w-full border border-green-500 p-2 rounded"
+          />
+          <input
+            type="text"
+            value={redSide}
+            onChange={(e) => setRedSide(e.target.value)}
+            placeholder="Red Side"
+            className="w-full border border-green-500 p-2 rounded"
+          />
+          <select 
+            value={isGlobal} 
+            onChange={(e) => setIsGlobal(e.target.value === 'true')}
+            className="w-full border border-green-500 p-2 rounded"
+          >
+            <option value={true}>Global</option>
+            <option value={false}>Private</option>
+          </select>
+          <button type="submit" className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-700 transition duration-300">
             Submit
           </button>
-        </motion.form>
-      </div>
-    </>
+          {postAdded && (
+            <div className="bg-green-200 text-green-800 p-4 rounded mb-4">
+              Post added successfully!
+            </div>
+          )}
+        </form>
+      </motion.div>
+    </motion.div>
+  </div>
   );
 }

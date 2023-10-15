@@ -376,7 +376,8 @@ export default function Home() {
                             return (
                               <li key={comment.id}>
                                 {comment.text}
-                                <button onClick={() => handleReply(comment.id)} className="rounded bg-blue-500 text-white p-2">
+                                <button onClick={() => handleReply(comment.id)} 
+                                className="rounded bg-blue-500 text-white p-2 mr-2">
                                   Reply
                                 </button>
                                 <button
@@ -384,7 +385,7 @@ export default function Home() {
                                   disabled={user && comment.userId === user.uid}
                                   className="rounded bg-green-500 text-white p-2"
                                 >
-                                  <AiFillLike /> Like
+                                  <AiFillLike /> 
                                 </button>
                                 {replyPostId === comment.id && (
                                   <div>

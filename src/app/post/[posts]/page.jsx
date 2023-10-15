@@ -25,41 +25,33 @@ export default function Home() {
 
   const params = useParams();
 
-  const fetchPosts = useCallback(async (isPrivate) => {
+  const fetchPosts = useCallback(async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'posts'));
       const postsData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-
-      let filteredPosts;
-      if (isPrivate) {
-        const allowedUserIds = [user?.uid, ...connectionsData.map(connection => connection.user2Uid)];
-        filteredPosts = postsData.filter(post => allowedUserIds.includes(post.UID));
-      } else {
-        filteredPosts = postsData.filter(post => post.isGlobal);
-      }
-
+  
       const commentsPromises = postsData.map(async (post) => {
         const commentsQuerySnapshot = 
-        await getDocs(collection(db, 'comments'), where('parentId', '==', post.id));
+          await getDocs(collection(db, 'comments'), where('parentId', '==', post.id));
         const commentsData = 
-        commentsQuerySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          commentsQuerySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         return { postId: post.id, comments: commentsData };
       });
-
+  
       const commentsForPosts = await Promise.all(commentsPromises);
       const commentsObj = commentsForPosts.reduce((acc, item) => {
         acc[item.postId] = item.comments;
         return acc;
       }, {});
       setPostComments(commentsObj);
-
-      setPosts(filteredPosts);
+  
+      setPosts(postsData);
       setLoading(false);
     } catch (error) {
       setError(error);
       console.error('Error fetching posts:', error);
     }
-  }, [connectionsData, user?.uid]);
+  }, []);  
 
   const fetchConnections = useCallback(async () => {
     try {

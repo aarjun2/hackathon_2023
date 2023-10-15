@@ -9,8 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "encoding": "^0.1.13",
     "firebase": "^10.4.0",
     "next": "latest",
+    "node-fetch": "^3.3.2",
     "react": "latest",
     "react-dom": "latest",
     "react-firebase-hooks": "^5.1.1",

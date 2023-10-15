@@ -7,7 +7,7 @@ import { auth } from "../firebaseConfig";
 import { useAuthState } from 'react-firebase-hooks/auth';
 import Link from "next/link";
 
-export default function authentication() {
+export default function Authentication() {
   const [user, loading, error] = useAuthState(auth);
 
   if (loading) {
